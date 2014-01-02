@@ -43,24 +43,28 @@ if flags.includes '-i'
       rexedFiles.push path.join(dir, f) if rex.test f
   files = rexedFiles
 
-filesInDir = (dir) ->
+filesInDir = (dir, includeHidden) ->
   if not fs.statSync(dir).isDirectory() then return [dir]
-  dirs = [dir].concat (filesInDir(path.join(dir, f)) for f in fs.readdirSync(dir))
+  dirs = [dir].concat (filesInDir(path.join(dir, f)) for f in fs.readdirSync(dir) when not /^\./.test f)
   return dirs.concat.apply([], dirs)
 
 if flags.includes '-c'
   cmd = "clear; #{cmd}"
 
 running = false
+changedFiles = []
 
 # Begin to watch all files
 for f in files
   console.log "Watching file: #{f}"
   for target in filesInDir f
-    fs.watchFile target, {interval: 500}, (event, filename) ->
-      if not running
-        running = true
+    fs.watch target, {interval: 100}, (event, filename) ->
+      changedFiles.push filename if filename
+      if not running and filename
+        running = true; changedFiles = [filename]
+        console.log 'Triggered by: ['
         exec "#{cmd}", (err, stdout, stderr) ->
+          console.log "#{changedFiles.reduce ((a,c) -> "#{a}    #{c}\n"), ''}]\n"
           process.stdout.write stdout
           if stderr != ''
             process.stdout.write ' >> stderr below'
