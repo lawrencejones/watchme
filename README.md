@@ -1,19 +1,19 @@
-### Motivation
+## Motivation
 
 Well, frankly iNotify was annoying me. Along with most of the other
 mac alternatives. So I've created a watching app in coffeescript that
 will watch a target filehandle for any changes and rerun the given
 command when it senses them.
 
-### Example
+## Example
 
 Great for web development- just write a quick applescript to refresh
 Google Chrome (like [here](https://gist.github.com/LawrenceJones/8906909))
 and then run this script like...
 
-    `watchme app --exec "osascript ~/refresh.applescript"`
+    watchme app --exec "osascript ~/refresh.applescript"
 
-### Usage
+## Usage
 
     Watchme - CoffeeScript
     
