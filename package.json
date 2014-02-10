@@ -1,0 +1,30 @@
+{
+  "author": "Lawrence Jones <lmj112@ic.ac.uk> (http://github.com/LawrenceJones)",
+  "name": "watchme",
+  "description": "Coffeescript File Watcher",
+  "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LawrenceJones/watchme.git"
+  },
+  "main": "lib/watchme.js",
+  "scripts": {
+    "build": "make all",
+    "prepublish": "make all"
+  },
+  "engines": {
+    "node": ">= 0.10.X"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "nodeunit": "*",
+    "docco": "*",
+    "coffee-script": ">= 1.6"
+  },
+  "keywords": ["files", "watch", "notify"],
+  "licenses": [
+    { "type": "MIT",
+      "url":  "http://github.com/assaf/zombie/blob/master/MIT-LICENSE"
+    }
+  ]
+}
