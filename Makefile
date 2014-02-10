@@ -15,6 +15,10 @@ LIB := $(SRC:$(SRC_DIR)/%.coffee=$(LIB_DIR)/%.js)
 # Phony all target
 all: $(LIB)
 	@-echo "Finished building watchme."
+ 
+# Produces folder for js
+lib:
+	@mkdir $@
 
 # Phony clean target
 clean:
@@ -25,6 +29,6 @@ clean:
 rebuild: clean all
 
 # Rule for all other coffee files
-lib/%.js: src/%.coffee
+lib/%.js: lib src/%.coffee
 	@-echo "  Compiling $@"
 	@$(COFFEE) $(COFFEE_FLAGS) -o $(LIB_DIR) $<
