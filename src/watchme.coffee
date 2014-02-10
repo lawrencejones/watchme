@@ -7,6 +7,7 @@
 #        we detect a change in the hash, and refind all subfiles
 
 fs    = require 'fs'
+path  = require 'path'
 exec  = require './exec'
 cli   = require './cli'
 usage = require './usage'
@@ -25,7 +26,11 @@ try
   if cliInput.options['--help']
     do usage; process.exit 0
   if cliInput.options['--version']
-    do version; process.exit 0
+    pkg_src = path.join __dirname, '..', 'package.json'
+    pkg = JSON.parse fs.readFileSync(pkg_src, 'utf8')
+    console.log '\n    Watchme - CoffeeScript'
+    console.log   "    #{pkg.description}"
+    console.log   "    VERSION #{pkg.version}\n"
 
   # Watch targets
   for t in cliInput.targets
@@ -34,7 +39,7 @@ try
 catch err
 
   # Prefix error and print usage
-  process.stdout.write '\n -> '
+  process.stdout.write '\n    -> '
   console.log err
   usage err
 
