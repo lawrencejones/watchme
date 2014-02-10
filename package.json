@@ -9,7 +9,7 @@
   },
   "main": "lib/watchme.js",
   "bin": {
-    "watchme": "lib/watchme.js"
+    "watchme": "bin/watchme"
   },
   "scripts": {
     "build": "make all",

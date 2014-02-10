@@ -1,5 +1,5 @@
 COFFEE := coffee
-COFFEE_FLAGS := --compile --bare --map
+COFFEE_FLAGS := --compile --bare
 
 # Setup file locations
 SRC_DIR  := src
@@ -13,11 +13,11 @@ LIB := $(SRC:$(SRC_DIR)/%.coffee=$(LIB_DIR)/%.js)
 .PHONY: all clean rebuild
 
 # Phony all target
-all: $(LIB)
+all: $(LIB_DIR) $(LIB)
 	@-echo "Finished building watchme."
  
 # Produces folder for js
-lib:
+$(LIB_DIR):
 	@mkdir $@
 
 # Phony clean target
@@ -29,6 +29,7 @@ clean:
 rebuild: clean all
 
 # Rule for all other coffee files
-lib/%.js: lib src/%.coffee
+lib/%.js: src/%.coffee
 	@-echo "  Compiling $@"
-	@$(COFFEE) $(COFFEE_FLAGS) -o $(LIB_DIR) $<
+	@$(COFFEE) $(COFFEE_FLAGS) -o $(LIB_DIR) $^
+
