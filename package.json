@@ -2,7 +2,7 @@
   "author": "Lawrence Jones <lmj112@ic.ac.uk> (http://github.com/LawrenceJones)",
   "name": "watchme",
   "description": "Coffeescript File Watcher",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "repository": {
     "type": "git",
     "url": "https://github.com/LawrenceJones/watchme.git"
@@ -24,10 +24,15 @@
     "docco": "*",
     "coffee-script": ">= 1.6"
   },
-  "keywords": ["files", "watch", "notify"],
+  "keywords": [
+    "files",
+    "watch",
+    "notify"
+  ],
   "licenses": [
-    { "type": "MIT",
-      "url":  "http://github.com/assaf/zombie/blob/master/MIT-LICENSE"
+    {
+      "type": "MIT",
+      "url": "http://github.com/assaf/zombie/blob/master/MIT-LICENSE"
     }
   ]
 }
