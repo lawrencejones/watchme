@@ -33,10 +33,11 @@ try
     console.log   "    VERSION #{pkg.version}\n"
 
   # Watch targets
-  for t in cliInput.targets
-    exec.watchTarget(t.label, t.targets, cliInput)
+  for arg in cliInput.targetArgs
+    exec.watchTargetArg arg, cliInput
 
 catch err
+  throw err
 
   # Prefix error and print usage
   process.stdout.write '\n    -> '

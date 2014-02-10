@@ -60,7 +60,7 @@ parseOptions = (args) ->
   # Split array into valid and invalid targets
   [valid, invalid, targets] = args.reduce ((v,c) ->
     v[+(!optAliases[c]?) + +(not /\-.+/.test(c))].push c; v), [[],[],[]]
-
+    
   # If any invalid throw error
   if invalid.length != 0
     throw new Error("Invalid arguments: #{invalid}")
@@ -69,11 +69,11 @@ parseOptions = (args) ->
   options[optAliases[f]] = true for f in valid
 
   # If regex then glob targets
-  if options['--regex']
-    try
-      files = (glob.targetsOnPattern new RegExp(file) for file in files)
-    catch err
-      throw new Error('Invalid regular expression, conform to ECMA standards')
+  # if options['--regex']
+  #   try
+  #     files = (glob.targetsOnPattern new RegExp(file) for file in files)
+  #   catch err
+  #     throw new Error('Invalid regular expression, conform to ECMA standards')
   
   # Add a clear
   if options['--clear'] then cmd = "clear; #{cmd}"
@@ -82,7 +82,7 @@ parseOptions = (args) ->
   # a hash of chosen options
   return {
     cmd: cmd
-    targets: ({label: t, targets: glob.targetsInDir(t)} for t in targets)
+    targetArgs: targets
     options: options
   }
 
