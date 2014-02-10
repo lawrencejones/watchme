@@ -1,3 +1,10 @@
+## Installation
+
+Install via [npm](https://npmjs.org/), node package manager. Example
+would be...
+
+    npm install -g watchme
+
 ## Motivation
 
 Well, frankly iNotify was annoying me. Along with most of the other
