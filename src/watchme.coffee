@@ -37,7 +37,6 @@ try
     exec.watchTargetArg arg, cliInput
 
 catch err
-  throw err
 
   # Prefix error and print usage
   process.stdout.write '\n    -> '
