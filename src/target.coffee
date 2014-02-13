@@ -90,7 +90,7 @@ class Dir extends Target
 # Decides if delete has ocurred
 determineEvent = (curr, prev) ->
   if curr.mode is 0 then return 'delete'
-  console.log prev
+  return 'modify'
 
 # Defines a standard file target
 class File extends Target
