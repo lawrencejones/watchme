@@ -18,13 +18,13 @@ debug = (mssg, newline = true) ->
   process.stdout.write mssg if verbose
 
 # Creates correct target
-createTarget = (label, basename, cb) ->
+createTarget = (label, basename, hidden, cb) ->
   try
     st = fs.statSync path.normalize(label)
   catch err
     throw new Error("File handle [#{@label}] not found")
   Target = if st.isDirectory() then Dir else File
-  new Target(label, basename, cb)
+  new Target(label, basename, hidden, cb)
 
 # Manages targets by continually updating the tree
 class Target
@@ -43,7 +43,7 @@ class Target
 # Manages directory structure
 class Dir extends Target
 
-  constructor: (label, basename, cb) ->
+  constructor: (label, basename, @hidden, cb) ->
     dir = this
     @children = {}
     super label, basename, cb
@@ -60,7 +60,12 @@ class Dir extends Target
       if curr.mode is 0 then dir.unwatch.call dir
 
   listChildren: ->
-    (path.normalize(path.join @label, fn) for fn in fs.readdirSync(@label))
+    label = @label
+    files = fs.readdirSync(@label).map (f) ->
+      path.normalize(path.join label, f)
+    if not @hidden
+      return files.filter (f) -> not /^\..+/.test path.basename(f)
+    files
 
   watchChildren: ->
     added = []

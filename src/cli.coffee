@@ -9,16 +9,18 @@ optAliases = {
   h: '--help'
   v: '--version'
   i: '--regex'
+  d: '--hidden'
   t: '--time'
   e: '--exec'
   q: '--quiet'
 }
 
 defaultOptions = -> {
-  '--time':  1500
-  '--clear': false
-  '--regex': false
-  '--quiet': false
+  '--time':   1500
+  '--clear':  false
+  '--regex':  false
+  '--quiet':  false
+  '--hidden': false
 }
 
 # Loop back aliases
@@ -55,8 +57,8 @@ parseOptions = (args) ->
   # Remove --exec and "cmd" from args
   cmd = extractFlagValue(args, '--exec') || ''
   # Parse the time delay
-  options['--time'] = (t = extractFlagValue(args, '--time')) || options['--time']
-  
+  options['--time'] = extractFlagValue(args, '--time') || options['--time']
+
   # Split array into valid and invalid targets
   [valid, invalid, targets] = args.reduce ((v,c) ->
     v[+(!optAliases[c]?) + +(not /\-.+/.test(c))].push c; v), [[],[],[]]

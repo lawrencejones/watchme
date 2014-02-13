@@ -41,7 +41,8 @@ execCommand = (target, e, cliInput) ->
 
 # Watch a target, whether file or folder
 watchTargetArg = (arg, cliInput) ->
-  target.create arg, arg, ((t,e,fn) -> execCommand t, e, cliInput)
+  cb = ((t,e,fn) -> execCommand t, e, cliInput)
+  target.create arg, arg, cliInput.options['--hidden'], cb
 
 module.exports = {
   watchTargetArg: watchTargetArg

@@ -34,6 +34,7 @@ and then run this script like...
       -e --exec     Prefix for the command to execute.
       -c --clear    Clear the screen on each trigger.
       -q --quiet    Do not display repeat trigger.
+      -h --hidden   Include hidden files.
       -i --regex    Recursively match regex for files.
       -h --help     Show this screen.
       --version     Show version.
