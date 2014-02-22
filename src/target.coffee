@@ -99,10 +99,10 @@ determineEvent = (curr, prev) ->
 
 # Defines a standard file target
 class File extends Target
-  constructor: (args...) ->
-    super args...
+  constructor: (label, basename, _, cb) ->
+    super label, basename, cb
     file = this
-    @lis = fs.watchFile @label, {interval: 100}, (curr,prev) ->
+    @lis = fs.watchFile @label, {interval: 100}, (curr, prev) ->
       e = determineEvent curr, prev
       file.cb file, e, file.label
 
