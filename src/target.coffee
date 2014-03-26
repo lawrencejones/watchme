@@ -30,6 +30,8 @@ createTarget = (label, basename, hidden, cb) ->
 class Target
 
   constructor: (label, @basename, @cb) ->
+    if typeof @cb != 'function'
+      throw Error 'Callback must be supplied!!!'
     target = this
     debug "Watching file: #{label}"
     @label = path.normalize label
@@ -71,7 +73,7 @@ class Dir extends Target
     added = []
     for fn in do @listChildren
       if not @children[fn]?
-        added.push (@children[fn] = createTarget fn, @basename, @cb)
+        added.push (@children[fn] = createTarget fn, @basename, @hidden, @cb)
     debug "Updating #{@label}: [#{added.map((a)->a.label).join(', ')}]"
     do @pruneChildren
     return added
@@ -104,7 +106,7 @@ class File extends Target
     file = this
     @lis = fs.watchFile @label, {interval: 100}, (curr, prev) ->
       e = determineEvent curr, prev
-      file.cb file, e, file.label
+      file.cb? file, e, file.label
 
 
 module.exports = {
