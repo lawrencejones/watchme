@@ -20,12 +20,12 @@
   },
   "dependencies": {
     "pegjs": "^0.8.0",
-    "q": "*"
+    "q": "^1.0.1"
   },
   "devDependencies": {
     "nodeunit": "*",
     "docco": "*",
-    "coffee-script": ">= 1.6"
+    "coffee-script": "*"
   },
   "keywords": [
     "files",

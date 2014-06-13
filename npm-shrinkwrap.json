@@ -1,0 +1,14 @@
+{
+  "name": "watchme",
+  "version": "0.3.0",
+  "dependencies": {
+    "pegjs": {
+      "version": "0.8.0",
+      "from": "pegjs@^0.8.0"
+    },
+    "q": {
+      "version": "1.0.1",
+      "from": "q@*"
+    }
+  }
+}
