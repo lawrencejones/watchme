@@ -1,8 +1,10 @@
 # Deal with repeated execution
 fs     = require 'fs'
-exec   = require('child_process').exec
+spawn  = require('child_process').spawn
 path   = require 'path'
 target = require './target'
+parser = require './cmd_parser'
+$q     = require 'q'
 
 # Keep track of running and cache for changed
 running = false
@@ -16,13 +18,18 @@ printTriggered = (triggered, cliInput) ->
   console.log 'Triggered by: ['
   mssg = ("    #{formatLog(e, lbl)}" for own lbl,e of triggered).join ',\n'
   console.log "#{mssg}\n]"
-  
-triggerCommand = (cmd, cb, wait) ->
-  exec "#{cmd}", (err, stdout, stderr) ->
-    process.stdout.write stdout
-    if stderr != ''
-      process.stdout.write ' >> stderr below'
-      process.stderr.write stderr
+
+# Runs the command built from cmdStr.
+# Throws syntax errors.
+triggerCommand = (cmdStr, cb, wait) ->
+  cmd = parser.parse cmdStr
+  done = cmd.init()
+  cmd.pipe sout: process.stdout, serr: process.stderr
+  done.then (code) ->
+    console.log "Exited with code [#{code}]"
+  cone.catch (code) ->
+    console.log "Failed with code [#{code}]"
+  done.finally ->
     setTimeout cb, wait
 
 # Actually execute the command
@@ -34,10 +41,10 @@ execCommand = (target, e, cliInput) ->
   ]
   triggered[target.label] = triggered[target.label] || e
   if not running
-    running = true; setTimeout (->
+    running = true; $q.delay(parseInt wait, 10).then ->
       printTriggered triggered, cliInput if not quiet
       triggered = {}
-      triggerCommand cmd, (-> running = false), parseInt(wait, 10)), 100
+      triggerCommand cmd, (-> running = false), parseInt(wait, 10)
 
 # Watch a target, whether file or folder
 watchTargetArg = (arg, cliInput) ->

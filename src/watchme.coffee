@@ -8,7 +8,7 @@
 
 fs    = require 'fs'
 path  = require 'path'
-exec  = require './exec'
+spawn = require './spawn'
 cli   = require './cli'
 usage = require './usage'
 
@@ -34,7 +34,7 @@ try
 
   # Watch targets
   for arg in cliInput.targetArgs
-    exec.watchTargetArg arg, cliInput
+    spawn.watchTargetArg arg, cliInput
 
 catch err
 

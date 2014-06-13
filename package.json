@@ -18,7 +18,10 @@
   "engines": {
     "node": ">= 0.10.X"
   },
-  "dependencies": {},
+  "dependencies": {
+    "pegjs": "^0.8.0",
+    "q": "*"
+  },
   "devDependencies": {
     "nodeunit": "*",
     "docco": "*",
