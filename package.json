@@ -2,7 +2,7 @@
   "author": "Lawrence Jones <lmj112@ic.ac.uk> (http://github.com/LawrenceJones)",
   "name": "watchme",
   "description": "Coffeescript File Watcher",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/LawrenceJones/watchme.git"
