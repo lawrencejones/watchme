@@ -12,8 +12,11 @@ class Sequential extends Node
   init: (@def = $q.defer()) ->
 
     do @h.init
-    @h.catch @def.reject if @firstFail
-    @h.done.then =>
+    @h.done.catch @def.reject if @firstFail
+
+    # Determine whether to proceed with next command on failure, or fail.
+    handler = @h.done[if @firstFail then 'then' else 'finally']
+    handler.call @h.done, =>
       @t.init @def
       @t.pipe @io
 
