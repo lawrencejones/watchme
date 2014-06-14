@@ -52,8 +52,9 @@ line
 file
   = char:[^ ]+ { return new Node.FileNode(char.join('')); }
 
+/* TODO - More comprehensive, less limiting character selection */
 word
-  = letters:[A-Za-z0-9-_+]+ { return letters.join(''); }
+  = letters:[A-Za-z0-9-_+\[\]()]+ { return letters.join(''); }
 
 ws
   = [ ]+

@@ -14,6 +14,10 @@ options = null
 formatLog = (event, label) ->
   "#{event}  #{label}"
 
+# Throws error if str is unparsable
+validateCmd = (cmdStr) ->
+  cmd = parser.parse cmdStr
+
 printTriggered = (triggered, cliInput) ->
   console.log 'Triggered by: ['
   mssg = ("    #{formatLog(e, lbl)}" for own lbl,e of triggered).join ',\n'
@@ -54,4 +58,5 @@ watchTargetArg = (arg, cliInput) ->
 
 module.exports = {
   watchTargetArg: watchTargetArg
+  validateCmd: validateCmd
 }

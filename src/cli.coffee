@@ -2,6 +2,7 @@
 
 path = require 'path'
 glob = require './glob'
+spawn = require './spawn'
 
 # List of command line options
 optAliases = {
@@ -56,6 +57,8 @@ parseOptions = (args) ->
 
   # Remove --exec and "cmd" from args
   cmd = extractFlagValue(args, '--exec') || ''
+  spawn.validateCmd cmd # may throw error
+
   # Parse the time delay
   options['--time'] = extractFlagValue(args, '--time') || options['--time']
 
