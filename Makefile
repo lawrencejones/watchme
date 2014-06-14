@@ -1,4 +1,4 @@
-COFFEE := coffee
+COFFEE := ./node_modules/coffee-script/bin/coffee
 COFFEE_FLAGS := --compile --bare
 PEG := ./node_modules/pegjs/bin/pegjs
 
