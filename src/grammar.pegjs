@@ -8,7 +8,8 @@
    With {} brackets used to explictly group commands. */
 
 {
-  var Node = require('./nodes');
+  var Node = arguments[1] || require('./nodes'),
+      PATH = require('path');
 }
 
 start
@@ -23,61 +24,51 @@ conjunction
   / redirect
 
 redirect
-  = l:pipe op:rOp ws? r:file ws? tail:seq {
+  = l:pipe op:rOp ws? r:file {
     return new op(l,r);
   }
   / pipe
 
 rOp
-  = '>>' { return Node.RedirectOp; }
-  / '>'  { return Node.AppendOp; }
+  = '>>' { return Node.AppendOp; }
+  / '>'  { return Node.RedirectOp; }
 
 pipe
   = l:cmd '|' r:cmd { return new Node.PipeOp(l,r); }
   / cmd
 
+/* Represents a command of form BIN ARGS+ */
 cmd
-  = ws? bin:path args:token* ws? { return new Node.Cmd(bin,args); }
+  = ws? bin:token args:argToken* ws? { return new Node.Cmd(bin,args); }
   / ws? { return null; }
 
+/* The smallest argument granularity. */
+argToken
+  = ws t:token &{
+    return !/^(>|>>|\||&&|;)$/.test(t);
+  } { return t; }
+  / ws l:line { return l; }
 
+/* Detects a file path */
+file
+  = file:token { return new Node.FileNode(file); }
+
+/* Represents a quote escaped line */
+line
+  = '"' ts:token+ '"'
+  / "'" td:token+ "'"
+
+/* Matches a single word token, considered to be a singular arguments. */
 token
-  = ws word:word { return word; }
-  / ws line:line { return line; }
-
-/* grep
-   /path/to/bin
-   ../relative/bin
-   bin\ with\ escaped
-   ../mix/of\ all */
-path
-  = '~' tail:pathTail? { return PATH.resolve('~'+(pathTail || '')) }
-  / path:pathTail { return PATH.resolve(path); }
-pathTail
-  = segs:('/' filename)+ { return segs.join(''); }
-
-/* Any token that could be considered to be a component of a unix path,
-   as a single file segment. */
-filename
-  = '.' / '..'
-  / cs:chars+ { return cs.join(''); }
+  = cs:chars+ { return cs.join(''); }
 
 /* Match on any escaped special character, or on
    anything that is not null, space, !, `, &, *, (, ), +, / or \. */
 chars
-  = "\\" spec:[ !$*()+] { return "\\"+spec; }
-  / c:[^\0 !`&*()+\/\\] { return c; }
+  = "\\" spec:[ ;!$*()+] { return "\\"+spec; }
+  / c:[^\0 !`&*()+\\;] { return c; }
 
-line
-  = '"' content:[^"]+ '"' { return '"'+content.join('')+'"'; }
-  / "'" content:[^']+ "'" { return '"'+content.join('')+'"'; }
 
-file
-  = char:[^ ]+ { return new Node.FileNode(char.join('')); }
-
-/* TODO - More comprehensive, less limiting character selection */
-word
-  = letters:[A-Za-z0-9-_+\[\]()]+ { return letters.join(''); }
-
+/* Whitespace, any amount of spaces */
 ws
   = [ ]+

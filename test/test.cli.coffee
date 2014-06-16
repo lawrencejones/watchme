@@ -23,6 +23,7 @@ before (done) ->
 
 # Remove the directory
 after (done) ->
+  console.log TMP_DIR
   exec "rm -rf #{TMP_DIR}", -> do done
 
 # CLI Parser Specs ###################################################

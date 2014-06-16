@@ -11,6 +11,7 @@ class Node
 
 class Cmd extends Node
 
+  type: 'Cmd'
   constructor: (@bin, @args) ->
 
   init: (@def = $q.defer()) ->
@@ -52,9 +53,11 @@ class Sequential extends Node
     @h.pipe @io
 
 class SeqOp extends Sequential
+  type: 'SeqOp'
   firstFail: false
 
 class ConjunctionOp extends Sequential
+  type: 'ConjunctionOp'
   firstFail: true
 
 # Command Output Redirect to File > ##################################
@@ -74,14 +77,17 @@ class Redirect extends Node
     @done = @def.promise
 
 class RedirectOp extends Redirect
+  type: 'RedirectOp'
   replace: true
 class AppendOp extends Redirect
+  type: 'AppendOp'
   replace: false
 
 # Process Piping | ###################################################
 
 class PipeOp extends Node
 
+  type: 'PipeOp'
   constructor: (@l, @r) ->
 
   init: (@def = $q.defer()) ->
@@ -103,7 +109,9 @@ class PipeOp extends Node
 # File Writeable Node ################################################
 
 class FileNode extends Node
+  type: 'FileNode'
   constructor: (@file) ->
+  open: ->
     try @writeable = fs.createWriteStream @file
     catch err then throw err
   remove: ->
@@ -111,7 +119,7 @@ class FileNode extends Node
     catch err
 
 
-module.exports =
+module.exports = Nodes =
 
   Node: Node
   Cmd: Cmd
