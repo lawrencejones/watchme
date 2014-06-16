@@ -9,7 +9,7 @@
 fs    = require 'fs'
 path  = require 'path'
 spawn = require './spawn'
-cli   = require './cli'
+Cli   = require './cli'
 usage = require './usage'
 
 # Reformat args
@@ -17,24 +17,23 @@ args = process.argv[2..]
 
 try
 
-  # Parse options
-  if args.length is 0
-    throw new Error('No given arguments')
-  cliInput = cli args
+  parsed = Cli.sanitize args
+  [cmd, targets, options] =
+    [parsed.cmd, parsed.targets, parsed.options]
 
   # Check for terminating flags
-  if cliInput.options['--help']
+  if options['help']
     do usage; process.exit 0
-  if cliInput.options['--version']
-    pkg_src = path.join __dirname, '..', 'package.json'
-    pkg = JSON.parse fs.readFileSync(pkg_src, 'utf8')
+  if options['version']
+    pkgSrc = path.join __dirname, '..', 'package.json'
+    pkg = JSON.parse fs.readFileSync(pkgSrc, 'utf8')
     console.log '\n    Watchme - CoffeeScript'
     console.log   "    #{pkg.description}"
     console.log   "    VERSION #{pkg.version}\n"
 
   # Watch targets
-  for arg in cliInput.targetArgs
-    spawn.watchTargetArg arg, cliInput
+  for arg in targets
+    spawn.watchTargetArg arg, options
 
 catch err
 

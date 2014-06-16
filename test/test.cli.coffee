@@ -9,21 +9,10 @@ Cli = require '../src/cli'
 # Modify String for semantic coloring
 (require 'colorize')(String)
 
-
 # Shared test hooks ##################################################
 
 # Store all test files in this folder. Remove on cleanup.
-TMP_DIR = "/tmp/watchme-#{Date.now()}"
-
-# Create a new tmp folder first
-before (done) ->
-  exec "mkdir -p #{TMP_DIR} #{TMP_DIR}/folder", (err) ->
-    if err is not 0 then throw err
-    do done
-
-# Remove the directory
-after (done) ->
-  exec "rm -rf #{TMP_DIR}", -> do done
+TMP_DIR = (require './test.tmpdir').init(before, after)
 
 # CLI Parser Specs ###################################################
 
@@ -31,29 +20,19 @@ describe 'Cli', ->
 
   describe 'ArgParser', ->
 
-    argParser = new Cli.ArgParser [# {{{
+    argParser = new Cli.ArgParser [
       ['c', 'clear']
       ['t', 'time', 1500] # default 1500
       ['r', 'regex', null]
     ]
 
-    tmpFiles = [
+    files = [
       'file_a'
       'folder/file_b'
-    ].map (file) -> path.join TMP_DIR, file
+    ]
 
-    # Create temp test files
-    beforeEach (done) ->
-      do touch = (files = tmpFiles[..]) -># {{{
-        return done() if files.length is 0
-        file = files.shift()
-        fs.writeFile file, "Content of file #{file}", 'utf8', (err) ->
-          if err then should.fail err
-          touch files# }}}
-
-    # Cleanup temporary files
-    afterEach ->
-      fs.unlinkSync file for file in tmpFiles
+    # Setup automatical tmp folder generation
+    (require './test.tmpfiles').init(beforeEach, afterEach, files)
 
     # Function stub to mock our current working directory
     fileValidation = (file) ->
@@ -118,9 +97,19 @@ describe 'Cli', ->
 
       it 'when no exec command given', ->
         try sanitize ['./file_a', '--clear']
-        catch err then return
+        catch err then return if /--exec/.test err
         throw Error 'failed to detect no exec'# }}}
-      # }}}
+
+      it 'when file target does not exist', ->
+        try sanitize ['./does_not_exist', '-e', 'echo']
+        catch err
+          return if /supply any valid watch targets/.test err
+        throw Error 'failed to detect non-existant target'
+
+      it 'when file target in folder does not exist', ->
+        try sanitize ['./folder/does_not_exist', '-e', 'echo']
+        catch err then return if /valid watch targets/.test err
+        throw Error 'failed to detect non-existant target'
 
 
 
