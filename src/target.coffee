@@ -4,7 +4,6 @@
 
 fs   = require 'fs'
 path = require 'path'
-glob = require './glob'
 
 # Store all watched targets
 targets = []

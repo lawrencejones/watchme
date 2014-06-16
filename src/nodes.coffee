@@ -2,8 +2,31 @@ spawn = (require 'child_process').spawn
 fs = require 'fs'
 $q = require 'q'
 
+# Main Parent Node ###################################################
+
 class Node
   pipe: ->
+
+# Basic Command, Simulates a Program #################################
+
+class Cmd extends Node
+
+  constructor: (@bin, @args) ->
+
+  init: (@def = $q.defer()) ->
+    @prog = spawn @bin, @args
+    @prog.on 'close', (code) =>
+      if !code? or code is 0
+        return @def.resolve 0
+      else @def.reject code
+    @done = @def.promise
+
+  pipe: (io) ->
+    io.in?.pipe @prog.stdin if io.in?
+    @prog.stdout?.pipe io.sout if io.sout?
+    @prog.stderr?.pipe io.serr if io.serr?
+
+# Command Composition - Sequential ;, && ###############################
 
 class Sequential extends Node
 
@@ -28,6 +51,14 @@ class Sequential extends Node
       serr: io.serr ? process.stderr
     @h.pipe @io
 
+class SeqOp extends Sequential
+  firstFail: false
+
+class ConjunctionOp extends Sequential
+  firstFail: true
+
+# Command Output Redirect to File > ##################################
+
 class Redirect extends Node
 
   constructor: (@src, @dst) ->
@@ -42,73 +73,60 @@ class Redirect extends Node
       @dst.writeable.end()
     @done = @def.promise
 
-# Basic design pattern for a syntax node.
-#
-#   init: (@def, io)
-#     @def: deferred object saved onto the instance
-#     io:
-#       in: source stream to pipe into a stdin
-#       sout: destination to pipe any appropriate stdout
-#       serr: destination for piping appropriate stderr
+class RedirectOp extends Redirect
+  replace: true
+class AppendOp extends Redirect
+  replace: false
+
+# Process Piping | ###################################################
+
+class PipeOp extends Node
+
+  constructor: (@l, @r) ->
+
+  init: (@def = $q.defer()) ->
+
+    do @l.init
+    @recv = @l.recv
+    do @r.init @def
+
+    @l.pipe sout: @r.recv, serr: @r.recv
+    @l.done.then => @r.recv.end()
+    @l.done.catch @def.reject
+
+    @done = @def.promise
+
+  pipe: (io) ->
+    @l?.pipe? in: io.in, sout: @r.recv, serr: process.stderr
+    @r?.pipe? sout: io.sout, serr: io.serr
+    
+# File Writeable Node ################################################
+
+class FileNode extends Node
+  constructor: (@file) ->
+    try @writeable = fs.createWriteStream @file
+    catch err then throw err
+  remove: ->
+    try fs.unlinkSync @file
+    catch err
 
 
 module.exports =
 
-  Cmd: class Cmd extends Node
+  Node: Node
+  Cmd: Cmd
+  FileNode: FileNode
 
-    constructor: (@bin, @args) ->
+  # Piping
+  PipeOp: PipeOp
 
-    init: (@def = $q.defer()) ->
-      @prog = spawn @bin, @args
-      @prog.on 'close', (code) =>
-        if !code? or code is 0
-          return @def.resolve 0
-        else @def.reject code
-      @done = @def.promise
+  # Sequentials
+  Sequential: Sequential
+  SeqOp: SeqOp
+  ConjunctionOp: ConjunctionOp
 
-    pipe: (io) ->
-      io.in?.pipe @prog.stdin if io.in?
-      @prog.stdout?.pipe io.sout if io.sout?
-      @prog.stderr?.pipe io.serr if io.serr?
+  # Redirects
+  Redirect: Redirect
+  RedirectOp: RedirectOp
+  AppendOp: AppendOp
 
-  PipeOp: class PipeOp extends Node
-
-    constructor: (@l, @r) ->
-
-    init: (@def = $q.defer()) ->
-
-      do @l.init
-      @recv = @l.recv
-      do @r.init @def
-
-      @l.pipe sout: @r.recv, serr: @r.recv
-      @l.done.then => @r.recv.end()
-      @l.done.catch @def.reject
-
-      @done = @def.promise
-
-    pipe: (io) ->
-      @l?.pipe? in: io.in, sout: @r.recv, serr: process.stderr
-      @r?.pipe? sout: io.sout, serr: io.serr
-      
-  SeqOp: class SeqOp extends Sequential
-    firstFail: false
-
-  ConjunctionOp: class ConjunctionOp extends Sequential
-    firstFail: true
-
-  FileNode: class FileNode extends Node
-    constructor: (@file) ->
-      try @writeable = fs.createWriteStream @file
-      catch err then throw err
-    remove: ->
-      try fs.unlinkSync @file
-      catch err
-
-  RedirectOp: class RedirectOp extends Redirect
-    replace: true
-  AppendOp: class AppendOp extends Redirect
-    replace: false
-
-
-      

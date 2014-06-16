@@ -2,7 +2,6 @@
 
 fs = require 'fs'
 path = require 'path'
-glob = require './glob'
 spawn = require './spawn'
 
 # List of command line options, in format [SHORT, FLAG, DEFAULT]
@@ -83,24 +82,26 @@ class ArgParser
 
 module.exports = Cli =
   ArgParser: ArgParser
-  run: (args = process.argv[2..]) ->
+  sanitize: (args = process.argv[2..], verify) ->
 
     # Parse options from arguments
-    argParser = new ArgParser defaultOptionDefs
-    parsed = argParser.parse args, ->
+    argParser = new ArgParser
+    parsed = argParser.parse args, verify
     [options, unmatched] = [parsed.options, parsed.unmatched]
     
-  
     # Set up max and min number of targets
-    if not (0 < unmatched.length <= 10)
-      throw new Error 'Too many watch targets, limit is 10'
+    if not unmatched.length > 0
+      throw new Error 'Did not supply any valid watch targets'
 
-    # Add a clear
-    if options['--clear'] then cmd = "clear; #{cmd}"
+    # Require a command
+    if not (cmd = options['exec'])?
+      throw new Error 'Command (--exec) not supplied'
+
+    if options['clear'] then cmd = "clear; #{cmd}"
 
     # Return a joined command, an array of target names and reliances and
     # a hash of chosen options
     cmd: cmd
-    targetArgs: targets
+    targets: unmatched
     options: options
 
