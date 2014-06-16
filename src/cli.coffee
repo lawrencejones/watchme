@@ -1,94 +1,106 @@
 # Deals with parsing input to the command line
 
+fs = require 'fs'
 path = require 'path'
 glob = require './glob'
 spawn = require './spawn'
 
-# List of command line options
-optAliases = {
-  c: '--clear'
-  h: '--help'
-  v: '--version'
-  i: '--regex'
-  d: '--hidden'
-  t: '--time'
-  e: '--exec'
-  q: '--quiet'
-}
+# List of command line options, in format [SHORT, FLAG, DEFAULT]
+# If an option is just a boolean switch, then the option will be
+# assumed false unless provided in arguments, when it's detection
+# will indicate true.
+#
+# If an argument is expected to take a particular value, then
+# give a default in as the third array element. Type is then
+# inferred during parsing.
+defaultOptionDefs = -> [
+  ['c', 'clear']
+  ['h', 'help']
+  ['v', 'version']
+  ['d', 'hidden']
+  ['q', 'quiet']
+  ['t', 'time', 1500]
+  ['i', 'regex', null]
+  ['e', 'exec', null]
+]
 
-defaultOptions = -> {
-  '--time':   1500
-  '--clear':  false
-  '--regex':  false
-  '--quiet':  false
-  '--hidden': false
-}
+# Given a string value and a default, will return the type coerced
+# value of the string.
+coerce = (val, def) ->
+  switch typeof def
+    when 'number' then parseFloat val, 10
+    when 'boolean' then "#{val}" is 'true'
+    else val
 
-# Loop back aliases
-(_opts = _opts || {})["-#{k}"] = v for k,v of optAliases
-_opts[v] = v for own k,v of _opts
-optAliases = _opts
-  
-# Extract a --flag <value> pair
-extractFlagValue = (args, flag, short) ->
-  if not /^(\-\w)|(\-\-\w+)$/.test flag
-    throw new Error("Invalid flag: #{flag}")
-  short = short || flag.match(/\-(\w)/)[1]
-  long  = flag.match(/\-\-(\w+)/)[1]
-  r = new RegExp("^(\-#{short}|\-\-#{long})$")
-  for arg,i in args
-    if r.test arg
-      [_, val] = args.splice(i, 2)
-      return val
+class ArgParser
 
-# Return a hash of option switches
-parseOptions = (args) ->
+  # Construct an instance of Options from an array of string defs.
+  constructor: (defs = do defaultOptionDefs) ->
+    @generateParsers defs # create argument parsers
 
-  # Assign default options initially
-  options = do defaultOptions
-  
-  # Set up max and min number of targets
-  [targetMin, targetMax] = [1,10]
-  
-  # Verify argument arity
-  if args.length is 0
-    process.stderr.write 'No given arguments\n'
-    throw new Error('No arguments')
+  # Given a list of option definitions, in the form of strings
+  # representing the SHORT,FLAG,VAL? of the option.
+  # An example would be -c,--clear for clear, with no value, while
+  # a regex option is -r,--regex,VAL to indicate that this flag has
+  # an assigned value.
+  #
+  # The returned parsers object should have appropriate parser
+  # functions for each of the supplied definitions, referenced at
+  # both their short and long flag names.
+  generateParsers: (defs = optDefs) ->
+    @parsers = new Object
+    defs.map (def) =>
+      [short, long, hasDefault] = def
+      @parsers["-#{short}"] = @parsers["--#{long}"] = (args, i) ->
+        opt = key: long
+        opt.value = coerce args[i+1], hasDefault if hasDefault != undefined
+        opt
+    @parsers
 
-  # Remove --exec and "cmd" from args
-  cmd = extractFlagValue(args, '--exec') || ''
-  spawn.validateCmd cmd # may throw error
+  # Verifies that a file exists using the supplied wd and resolving all
+  # ., .. and ~'s.
+  fileExists: (file, wd = process.cwd()) ->
+    fpath = path.resolve wd, file
+    fs.existsSync fpath
 
-  # Parse the time delay
-  options['--time'] = extractFlagValue(args, '--time') || options['--time']
+  # Given an array of command line arguments and an options
+  # object, will use the objects PARSERS to process each argument
+  # and assigned value in turn.
+  #
+  # Will return an object containing all options and unmatched
+  # args.
+  parse: (args, verify = @fileExists, options = {}, i = 0) ->
+    # Verify argument arity
+    throw new Error 'No given arguments' unless args.length > 0
+    [targets, options] = [[],{}]
+    while i < args.length
+      opt = @parsers[args[i]]? args, i
+      if !opt then targets.push args[i]
+      else
+        options[opt.key] = opt.value ? true
+      i += 1 + +(opt?.value?)
+    options: options, unmatched: targets.filter (t) -> verify t
 
-  # Split array into valid and invalid targets
-  [valid, invalid, targets] = args.reduce ((v,c) ->
-    v[+(!optAliases[c]?) + +(not /\-.+/.test(c))].push c; v), [[],[],[]]
+module.exports = Cli =
+  ArgParser: ArgParser
+  run: (args = process.argv[2..]) ->
+
+    # Parse options from arguments
+    argParser = new ArgParser defaultOptionDefs
+    parsed = argParser.parse args, ->
+    [options, unmatched] = [parsed.options, parsed.unmatched]
     
-  # If any invalid throw error
-  if invalid.length != 0
-    throw new Error("Invalid arguments: #{invalid}")
   
-  # Parse selected options
-  options[optAliases[f]] = true for f in valid
+    # Set up max and min number of targets
+    if not (0 < unmatched.length <= 10)
+      throw new Error 'Too many watch targets, limit is 10'
 
-  # If regex then glob targets
-  # if options['--regex']
-  #   try
-  #     files = (glob.targetsOnPattern new RegExp(file) for file in files)
-  #   catch err
-  #     throw new Error('Invalid regular expression, conform to ECMA standards')
-  
-  # Add a clear
-  if options['--clear'] then cmd = "clear; #{cmd}"
+    # Add a clear
+    if options['--clear'] then cmd = "clear; #{cmd}"
 
-  # Return a joined command, an array of target names and reliances and
-  # a hash of chosen options
-  return {
+    # Return a joined command, an array of target names and reliances and
+    # a hash of chosen options
     cmd: cmd
     targetArgs: targets
     options: options
-  }
 
-module.exports = parseOptions

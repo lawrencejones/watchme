@@ -37,13 +37,36 @@ pipe
   / cmd
 
 cmd
-  = ws? bin:word args:token* ws? { return new Node.Cmd(bin,args); }
+  = ws? bin:path args:token* ws? { return new Node.Cmd(bin,args); }
   / ws? { return null; }
 
 
 token
   = ws word:word { return word; }
   / ws line:line { return line; }
+
+/* grep
+   /path/to/bin
+   ../relative/bin
+   bin\ with\ escaped
+   ../mix/of\ all */
+path
+  = '~' tail:pathTail? { return PATH.resolve('~'+(pathTail || '')) }
+  / path:pathTail { return PATH.resolve(path); }
+pathTail
+  = segs:('/' filename)+ { return segs.join(''); }
+
+/* Any token that could be considered to be a component of a unix path,
+   as a single file segment. */
+filename
+  = '.' / '..'
+  / cs:chars+ { return cs.join(''); }
+
+/* Match on any escaped special character, or on
+   anything that is not null, space, !, `, &, *, (, ), +, / or \. */
+chars
+  = "\\" spec:[ !$*()+] { return "\\"+spec; }
+  / c:[^\0 !`&*()+\/\\] { return c; }
 
 line
   = '"' content:[^"]+ '"' { return '"'+content.join('')+'"'; }

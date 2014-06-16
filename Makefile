@@ -11,7 +11,7 @@ TEST_DIR := test
 SRC := $(wildcard $(SRC_DIR)/*.coffee | sort)
 LIB := $(SRC:$(SRC_DIR)/%.coffee=$(LIB_DIR)/%.js) lib/cmd_parser.js
 
-.PHONY: all clean rebuild
+.PHONY: all clean rebuild test watch
 
 # Phony all target
 all: $(LIB_DIR) $(LIB)
@@ -28,6 +28,20 @@ clean:
 
 # Phony rebuild target
 rebuild: clean all
+
+# Runs mocha tests
+PATTERN ?= ''
+test:
+	mocha\
+		--recursive --compilers coffee:coffee-script/register\
+		--reporter spec\
+		--colors\
+		--growl\
+		--grep ${PATTERN}
+
+# Watch for changes and rerun tests
+watch:
+	watchme -c ./src ./test -e "make test"
 
 # Build the pegjs parser
 lib/cmd_parser.js: src/grammar.pegjs
