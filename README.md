@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/LawrenceJones/watchme.svg?branch=master)](https://travis-ci.org/LawrenceJones/watchme)
+
 ## Installation
 
 Install via [npm](https://npmjs.org/), node package manager. Example
