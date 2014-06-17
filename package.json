@@ -27,6 +27,11 @@
     "colorize": "git://github.com/LawrenceJones/colorize"
   },
   "devDependencies": {
+    "pegjs": "^0.8.0",
+    "q": "^1.0.1",
+    "should": "^4.0.4",
+    "mocha": "^1.20.1",
+    "colorize": "git://github.com/LawrenceJones/colorize",
     "nodeunit": "*",
     "docco": "*",
     "coffee-script": "*",
