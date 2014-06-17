@@ -29,7 +29,8 @@
   "devDependencies": {
     "nodeunit": "*",
     "docco": "*",
-    "coffee-script": "*"
+    "coffee-script": "*",
+    "mocha": "*"
   },
   "keywords": [
     "files",
