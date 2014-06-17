@@ -2,7 +2,7 @@
   "author": "Lawrence Jones <lmj112@ic.ac.uk> (http://github.com/LawrenceJones)",
   "name": "watchme",
   "description": "Coffeescript File Watcher",
-  "version": "0.3.3",
+  "version": "0.4.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/LawrenceJones/watchme.git"
@@ -30,12 +30,11 @@
     "pegjs": "^0.8.0",
     "q": "^1.0.1",
     "should": "^4.0.4",
-    "mocha": "^1.20.1",
+    "mocha": "*",
     "colorize": "git://github.com/LawrenceJones/colorize",
     "nodeunit": "*",
     "docco": "*",
-    "coffee-script": "*",
-    "mocha": "*"
+    "coffee-script": "*"
   },
   "keywords": [
     "files",
