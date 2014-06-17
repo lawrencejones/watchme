@@ -6,11 +6,13 @@
 #        a list of all the folders within them and on each change
 #        we detect a change in the hash, and refind all subfiles
 
-fs     = require 'fs'
-path   = require 'path'
-usage  = require './usage'
-Cli    = require './cli'
-Target = (require './targets').Target
+fs        = require 'fs'
+path      = require 'path'
+usage     = require './usage'
+Cli       = require './cli'
+CmdParser = require './cmd_parser'
+Nodes     = require './nodes'
+Target    = (require './targets').Target
 
 # Reformat args
 args = process.argv[2..]
@@ -35,21 +37,37 @@ if options['version']
 try
 
   # Set up max and min number of targets
-  if not unmatched.length > 0
+  if not targets.length > 0
     throw new Error 'Did not supply any valid watch targets'
 
   # Require a command
-  if not (cmd = options['exec'])?
+  if not (cmdStr = options['exec'])?
     throw new Error 'Command (--exec) not supplied'
 
-  if options['clear'] then cmd = "clear; #{cmd}"
+  if options['clear'] then cmdString = "clear; #{cmdStr}"
+
+  cmd = CmdParser.parse cmdStr, Nodes
+  running = false
 
   # Watch targets
   for arg in targets
     target = Target.create arg
     do target.watch
+    console.log "Watching #{arg}"
+    target.subscribe (event) ->
+      if not running
+        running = true
+        if not options['quiet'] then console.log """
+        Triggered by...
+          [
+        #{('    '+e.type+'\t'+e.file for own _,e of event.files).join '\n'}
+          ]"""
+        cmd.run().then (code) ->
+          console.log "Exited with code [#{code}]" if not options['quiet']
+        .finally -> running = false
 
 catch err
+  throw err
 
   # Prefix error and print usage
   process.stdout.write '\n    -> '
