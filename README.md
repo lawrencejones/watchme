@@ -39,3 +39,9 @@ and then run this script like...
       -h --help     Show this screen.
       --version     Show version.
 
+
+## Contributions
+
+...are always appreciated! If you want to contribute, then open an issue,
+fork the repo, implement your feature and back it up with tests and I will
+absolutely merge it in.
