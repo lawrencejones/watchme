@@ -122,11 +122,10 @@ class Dir extends Target
             Target.create cname, @base
           do target.watch
           target.subscribe (event) =>
-            @eventCache ?= tname: @tname, files: []
-            @eventCache.files.push
-              type: event, path: @file
-            @broadcast(@eventCache).finally =>
-              @eventCache = null
+            for own file,change of event.files
+              @broadcast\
+              ( tname: @tname, type: change.type, file: change.file
+              , 0 )
 
   # Examines the current folder contents. If any folder watchers
   # are registered which no longer exist, then these are removed

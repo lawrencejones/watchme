@@ -1,5 +1,6 @@
 # vi: set foldmethod=marker
 
+$q = require 'q'
 fs = require 'fs'
 path = require 'path'
 assert = require 'assert'
@@ -100,6 +101,17 @@ describe 'Target', ->
       afterEach ->
         do target.unwatch
 
+      # Given a target and an unreg function, verify that calling unreg
+      # removes a waiter from the targets list.
+      checkUnreg = (target, unreg) ->
+        count = target.waiters.length
+        do unreg
+        target.waiters.length.should.eql count-1
+
+      # Appends to a target file, stimulating a watch response.
+      tapFile = (file) ->
+        fs.appendFileSync file, 'APPEND', 'utf8'
+
       it 'should detect child dir', ->
         target.should.containEql
           tname: targetName
@@ -125,12 +137,29 @@ describe 'Target', ->
               files:
                 'folder/file_c':
                   type: 'rename', file: fileC
-            count = target.waiters.length
-            do unreg
-            target.waiters.length.should.eql count-1
-          catch err
-          done err
-        fs.appendFile fileC, 'APPEND', 'utf8', (err) ->
-          if err then done err
+            checkUnreg target, unreg
+          catch err; done err
+        tapFile fileC
+
+      eName = './folder/sub_folder/sub_sub/file_e'
+      it "should detect change to #{eName.white}", (done) ->
+        fileE = path.join TMP_DIR, 'folder', 'sub_folder', 'sub_sub', 'file_e'
+        unreg = target.subscribe (event) ->
+          try
+            event.should.containEql
+              tname: targetName
+              files:
+                './folder':
+                  type: 'rename', file: fileE
+            checkUnreg target, unreg
+          catch err; done err
+        tapFile fileE
+
+      it 'should not falsely trigger', (done) ->
+        unreg = target.subscribe (event) ->
+          assert.fail event
+        $q.delay(450).then ->
+          do unreg
+          do done
 
 
