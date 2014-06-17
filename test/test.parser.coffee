@@ -69,6 +69,16 @@ TEST_CMDS =
         tail: bin: 'echo', args: ['donotprint']
       out: '', err: '', exit: 1
     ]
+      #####################################################
+    [ 'PipeOp'
+      #####################################################
+      
+      cmd: "echo hello | sed 's/hello/world/g'"
+      exp:
+        lhs: bin: 'echo', args: ['hello']
+        rhs: bin: 'sed', args: ["'s/hello/world/g'"]
+      out: 'world\n', err: ''
+    ]
   ]
 
 # Shared test hooks ##################################################

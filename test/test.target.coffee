@@ -136,7 +136,7 @@ describe 'Target', ->
               tname: targetName
               files:
                 'folder/file_c':
-                  type: 'rename', file: fileC
+                  type: 'change', file: fileC
             checkUnreg target, unreg
           catch err; done err
         tapFile fileC
@@ -150,7 +150,7 @@ describe 'Target', ->
               tname: targetName
               files:
                 './folder':
-                  type: 'rename', file: fileE
+                  type: 'change', file: fileE
             checkUnreg target, unreg
           catch err; done err
         tapFile fileE

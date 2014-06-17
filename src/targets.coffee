@@ -53,9 +53,11 @@ class Target
   #
   # During the wait, extra file events can be pushed into EVENT.FILES.
   broadcast: (event, wait = 500) ->
+    event.type = event.type.replace /rename/, 'change'
     run = not @eventCache?
     @eventCache ?= tname: @tname, files: {}
-    @eventCache.files[event.tname] = type: event.type, file: event.file
+    @eventCache.files[event.tname] ?=
+      type: event.type, file: event.file
     if run then $q.delay(wait).then =>
       waiter @eventCache for waiter in @waiters
       @eventCache = undefined
