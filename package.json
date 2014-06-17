@@ -14,7 +14,7 @@
   "scripts": {
     "build": "make all",
     "prepublish": "make all",
-    "test": "make test"
+    "test": "npm install && make test"
   },
   "engines": {
     "node": ">= 0.10.X"
