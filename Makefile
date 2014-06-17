@@ -8,7 +8,8 @@ LIB_DIR  := lib
 TEST_DIR := test
 
 # Glob all the coffee source
-SRC := $(wildcard $(SRC_DIR)/*.coffee | sort)
+ALL := $(wildcard $(SRC_DIR)/*.coffee | sort)
+SRC := $(filter-out lib/cmd_parser.js,$(ALL))
 LIB := $(SRC:$(SRC_DIR)/%.coffee=$(LIB_DIR)/%.js) lib/cmd_parser.js
 
 .PHONY: all clean rebuild test watch

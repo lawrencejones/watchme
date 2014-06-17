@@ -28,7 +28,10 @@ TEST_CMDS =
       cmd: 'echo hello world'
       exp: bin: 'echo', args: ['hello', 'world']
       out: 'hello world\n', err: ''
-
+    ,
+      cmd: 'karma start test/karma-unit.conf.coffee'
+      exp: bin: 'karma', args: ['start', 'test/karma-unit.conf.coffee']
+      dontExec: true
     ,
       cmd: 'touch /tmp/file'
       exp: bin: 'touch', args: ['/tmp/file']
@@ -139,7 +142,7 @@ describe 'CmdParser', ->
               cmd.type.should.eql test.rootType if test.rootType
               cmd.should.eql exp if not test.circular
 
-            it 'execute', (done) ->
+            if not test.dontExec then it 'execute', (done) ->
               cmd.run(stdout, stderr).then (code) ->
                 code.should.be.eql exit
                 verifyLogs eout, eerr
