@@ -1,6 +1,4 @@
-[![Build Status](https://travis-ci.org/LawrenceJones/watchme.svg?branch=master)](https://travis-ci.org/LawrenceJones/watchme)
-
-## Installation
+## Installation [![Build Status](https://travis-ci.org/LawrenceJones/watchme.svg?branch=master)](https://travis-ci.org/LawrenceJones/watchme)
 
 Install via [npm](https://npmjs.org/), node package manager. Example
 would be...
