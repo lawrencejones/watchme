@@ -32,7 +32,7 @@ rebuild: clean all
 # Runs mocha tests
 PATTERN ?= ''
 test:
-	./node_modules/mocha/bin/mocha\
+	mocha\
 		--recursive --compilers coffee:coffee-script/register\
 		--reporter spec\
 		--colors\
