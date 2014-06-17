@@ -23,11 +23,11 @@ class Cmd extends Node
 
   run: (args...) ->
     super args...
-    prog = spawn @bin, @args
+    @prog = prog = spawn @bin, @args
     @pipe prog.stdout, prog.stderr
     @in = prog.stdin
     def = $q.defer()
-    prog.on 'close', (code) =>
+    prog.on 'close', (code) ->
       def.resolve code
     def.promise
 
@@ -61,12 +61,10 @@ class Redirect extends Node
 
   run: (args..., append) ->
     super args...
-    done = @src.run()
-    do @dst.open
     @dst.remove() if @ instanceof RedirectOp
-    @src.out?.pipe @dst.in, end: false
-    @src.err?.pipe @dst.in, end: false
-    done
+    do @dst.open
+    done = @src.run @dst.in, @dst.in
+    done.then => @dst.close()
 
 class RedirectOp extends Redirect
   type: 'RedirectOp'
@@ -88,7 +86,9 @@ class PipeOp extends Node
     lhsDone = @lhs.run @rhs.in, @rhs.in
     @in = @lhs.in
 
-    lhsDone.then rhsDone
+    lhsDone.then =>
+      @rhs.in.end()
+      rhsDone
 
 # File Writeable Node ################################################
 
@@ -96,11 +96,10 @@ class FileNode extends Node
   type: 'FileNode'
   constructor: (@file) ->
   open: ->
-    try @in = fs.createWriteStream @file
-    catch err then throw err
+    @in = fs.createWriteStream @file
   remove: ->
-    try fs.unlinkSync @file
-    catch err
+    do @close
+    try fs.unlinkSync @file catch err
   close: -> @in?.end?()
 
 

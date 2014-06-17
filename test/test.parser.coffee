@@ -7,6 +7,13 @@ exec = (require 'child_process').exec
 Nodes = require '../src/nodes'
 CmdParser = require '../src/cmd_parser'
 
+# Shared test hooks ##################################################
+
+# Store all test files in this folder. Remove on cleanup.
+TMP_DIR = (require './test.tmpdir').init(before, after)
+STDOUT = path.join TMP_DIR, 'stdout.log'
+STDERR = path.join TMP_DIR, 'stderr.log'
+
 # Test cases
 TEST_CMDS =
   [
@@ -73,21 +80,26 @@ TEST_CMDS =
     [ 'PipeOp'
       #####################################################
       
-      cmd: "echo hello | sed 's/hello/world/g'"
+      cmd: "echo hello | sed s/hello/world/g"
       exp:
         lhs: bin: 'echo', args: ['hello']
-        rhs: bin: 'sed', args: ["'s/hello/world/g'"]
+        rhs: bin: 'sed', args: ['s/hello/world/g']
       out: 'world\n', err: ''
     ]
+#     #####################################################
+#   [ 'RedirectOp'
+#     #####################################################
+#
+#     cmd: "echo CONTENT > #{TMP_DIR}/output; cat #{TMP_DIR}/output"
+#     exp:
+#       head:
+#         src: bin: 'echo', args: ['hello']
+#         dst: file: "#{TMP_DIR}/output"
+#       tail:
+#         bin: 'cat', args: ["#{TMP_DIR}/output"]
+#     out: 'CONTENT', err: '', rootType: 'SeqOp', circular: true # fix this
+#   ]
   ]
-
-# Shared test hooks ##################################################
-
-# Store all test files in this folder. Remove on cleanup.
-TMP_DIR = (require './test.tmpdir').init(before, after)
-STDOUT = path.join TMP_DIR, 'stdout.log'
-STDERR = path.join TMP_DIR, 'stderr.log'
-
 
 # Parser Spec ########################################################
 
@@ -117,15 +129,15 @@ describe 'CmdParser', ->
         cmd = null
         [cmdStr, exp, eout, eerr] = [test.cmd, test.exp, test.out, test.err]
         exit = test.exit ? 0
-        before -> cmd = CmdParser.parse cmdStr, Nodes
 
         describe "$ #{cmdStr}".white, ->
 
           describe 'should', ->
 
             it 'parse', ->
-              cmd.type.should.eql node
-              cmd.should.eql exp
+              cmd = CmdParser.parse cmdStr, Nodes
+              cmd.type.should.eql test.rootType if test.rootType
+              cmd.should.eql exp if not test.circular
 
             it 'execute', (done) ->
               cmd.run(stdout, stderr).then (code) ->

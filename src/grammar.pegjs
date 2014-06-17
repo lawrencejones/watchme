@@ -24,7 +24,7 @@ conjunction
   / redirect
 
 redirect
-  = l:pipe op:rOp ws? r:file {
+  = l:pipe ws? op:rOp ws? r:file {
     return new op(l,r);
   }
   / pipe
@@ -44,19 +44,19 @@ cmd
 
 /* The smallest argument granularity. */
 argToken
-  = ws t:token &{
+  = ws l:line { return l; }
+  / ws t:token &{
     return !/^(>|>>|\||&&|;)$/.test(t);
   } { return t; }
-  / ws l:line { return l; }
 
 /* Detects a file path */
 file
-  = file:token { return new Nodes.FileNodes(file); }
+  = file:token { return new Nodes.FileNode(file); }
 
 /* Represents a quote escaped line */
 line
-  = '"' ts:token+ '"'
-  / "'" td:token+ "'"
+  = "'" td:token+ "'" { return '!'+td.join(''); }
+  / '"' ts:token+ '"' { return ts.join(''); }
 
 /* Matches a single word token, considered to be a singular arguments. */
 token

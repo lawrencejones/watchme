@@ -2,7 +2,6 @@
 
 fs = require 'fs'
 path = require 'path'
-spawn = require './spawn'
 
 # List of command line options, in format [SHORT, FLAG, DEFAULT]
 # If an option is just a boolean switch, then the option will be
@@ -69,8 +68,6 @@ class ArgParser
   # Will return an object containing all options and unmatched
   # args.
   parse: (args, verify = @fileExists, options = {}, i = 0) ->
-    # Verify argument arity
-    throw new Error 'No given arguments' unless args.length > 0
     [targets, options] = [[],{}]
     while i < args.length
       opt = @parsers[args[i]]? args, i
@@ -89,19 +86,9 @@ module.exports = Cli =
     parsed = argParser.parse args, verify
     [options, unmatched] = [parsed.options, parsed.unmatched]
     
-    # Set up max and min number of targets
-    if not unmatched.length > 0
-      throw new Error 'Did not supply any valid watch targets'
-
-    # Require a command
-    if not (cmd = options['exec'])?
-      throw new Error 'Command (--exec) not supplied'
-
-    if options['clear'] then cmd = "clear; #{cmd}"
-
     # Return a joined command, an array of target names and reliances and
     # a hash of chosen options
-    cmd: cmd
+    cmd: options['exec']
     targets: unmatched
     options: options
 

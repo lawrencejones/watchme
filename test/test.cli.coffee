@@ -88,28 +88,6 @@ describe 'Cli', ->
         it 'sanitized', ->
           sanitize secondArgs# }}}
 
-    describe 'should throw error', ->
-
-      it 'when given no arguments', -># {{{
-        try sanitize []
-        catch err then return
-        throw Error 'failed to throw error on no arguments'
-
-      it 'when no exec command given', ->
-        try sanitize ['./file_a', '--clear']
-        catch err then return if /--exec/.test err
-        throw Error 'failed to detect no exec'# }}}
-
-      it 'when file target does not exist', ->
-        try sanitize ['./does_not_exist', '-e', 'echo']
-        catch err
-          return if /supply any valid watch targets/.test err
-        throw Error 'failed to detect non-existant target'
-
-      it 'when file target in folder does not exist', ->
-        try sanitize ['./folder/does_not_exist', '-e', 'echo']
-        catch err then return if /valid watch targets/.test err
-        throw Error 'failed to detect non-existant target'
 
 
 
