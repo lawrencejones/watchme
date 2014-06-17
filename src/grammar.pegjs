@@ -8,7 +8,7 @@
    With {} brackets used to explictly group commands. */
 
 {
-  var Node = arguments[1] || require('./nodes'),
+  var Nodes = arguments[1] || require('./Nodes'),
       PATH = require('path');
 }
 
@@ -16,11 +16,11 @@ start
   = prog:seq? { return prog; }
 
 seq
-  = l:conjunction ';' r:seq ws? { return new Node.SeqOp(l,r); }
+  = l:conjunction ';' r:seq ws? { return new Nodes.SeqOp(l,r); }
   / conjunction
 
 conjunction
-  = h:redirect '&&' t:seq ws? { return new Node.ConjunctionOp(h,t); }
+  = h:redirect '&&' t:seq ws? { return new Nodes.ConjOp(h,t); }
   / redirect
 
 redirect
@@ -30,17 +30,17 @@ redirect
   / pipe
 
 rOp
-  = '>>' { return Node.AppendOp; }
-  / '>'  { return Node.RedirectOp; }
+  = '>>' { return Nodes.AppendOp; }
+  / '>'  { return Nodes.RedirectOp; }
 
 pipe
-  = l:cmd '|' r:cmd { return new Node.PipeOp(l,r); }
+  = l:cmd '|' r:cmd { return new Nodes.PipeOp(l,r); }
   / cmd
 
 /* Represents a command of form BIN ARGS+ */
 cmd
-  = ws? bin:token args:argToken* ws? { return new Node.Cmd(bin,args); }
-  / ws? { return null; }
+  = ws? bin:token args:argToken* ws? { return new Nodes.Cmd(bin,args); }
+  / ws? { return new Nodes.NoOp(); }
 
 /* The smallest argument granularity. */
 argToken
@@ -51,7 +51,7 @@ argToken
 
 /* Detects a file path */
 file
-  = file:token { return new Node.FileNode(file); }
+  = file:token { return new Nodes.FileNodes(file); }
 
 /* Represents a quote escaped line */
 line

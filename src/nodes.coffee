@@ -5,7 +5,14 @@ $q = require 'q'
 # Main Parent Node ###################################################
 
 class Node
-  pipe: ->
+  run: (@out = process.stdout, @err = process.stderr) ->
+  pipe: (sout, serr) ->
+    sout?.pipe @out, end: false
+    serr?.pipe @err, end: false
+
+class NoOp extends Node
+  type: 'NoOp'
+  run: -> $q.fcall -> 0
 
 # Basic Command, Simulates a Program #################################
 
@@ -14,67 +21,52 @@ class Cmd extends Node
   type: 'Cmd'
   constructor: (@bin, @args) ->
 
-  init: (@def = $q.defer()) ->
-    @prog = spawn @bin, @args
-    @prog.on 'close', (code) =>
-      if !code? or code is 0
-        return @def.resolve 0
-      else @def.reject code
-    @done = @def.promise
-
-  pipe: (io) ->
-    io.in?.pipe @prog.stdin if io.in?
-    @prog.stdout?.pipe io.sout if io.sout?
-    @prog.stderr?.pipe io.serr if io.serr?
+  run: (args...) ->
+    super args...
+    prog = spawn @bin, @args
+    @pipe prog.stdout, prog.stderr
+    @in = prog.stdin
+    def = $q.defer()
+    prog.on 'close', (code) =>
+      def.resolve code
+    def.promise
 
 # Command Composition - Sequential ;, && ###############################
 
-class Sequential extends Node
+class Composition extends Node
+  constructor: (@head, @tail) ->
 
-  constructor: (@h, @t) ->
-
-  init: (@def = $q.defer()) ->
-
-    do @h.init
-    @h.done.catch @def.reject if @firstFail
-
-    # Determine whether to proceed with next command on failure, or fail.
-    handler = @h.done[if @firstFail then 'then' else 'finally']
-    handler.call @h.done, =>
-      @t.init @def
-      @t.pipe @io
-
-    @done = @def.promise
-
-  pipe: (io) ->
-    @io =
-      sout: io.sout ? process.stdout
-      serr: io.serr ? process.stderr
-    @h.pipe @io
-
-class SeqOp extends Sequential
+class SeqOp extends Composition
   type: 'SeqOp'
-  firstFail: false
+  run: (args...) ->
+    super args...
+    @head.run(@out, @err).then =>
+      @tail.run(@out, @err)
 
-class ConjunctionOp extends Sequential
-  type: 'ConjunctionOp'
-  firstFail: true
+class ConjOp extends Composition
+  type: 'ConjOp'
+  run: (args...) ->
+    super args...
+    @head.run(@out, @err).then (code) =>
+      code || @tail.run(@out, @err)
 
 # Command Output Redirect to File > ##################################
 
 class Redirect extends Node
 
   constructor: (@src, @dst) ->
-  
-  init: (@def = $q.defer()) ->
-    do @src.init
-    @dst.remove() if @replace
-    @src.pipe sout: @dst.writeable, serr: @dst.writeable
-    @src.done.catch @def.reject
-    @src.done.then @def.resolve
-    @src.done.finally =>
-      @dst.writeable.end()
-    @done = @def.promise
+    if not @dst instanceof FileNode
+      throw new Error """
+      Destination must be an instance of FileNode"""
+
+  run: (args..., append) ->
+    super args...
+    done = @src.run()
+    do @dst.open
+    @dst.remove() if @ instanceof RedirectOp
+    @src.out?.pipe @dst.in, end: false
+    @src.err?.pipe @dst.in, end: false
+    done
 
 class RedirectOp extends Redirect
   type: 'RedirectOp'
@@ -88,50 +80,44 @@ class AppendOp extends Redirect
 class PipeOp extends Node
 
   type: 'PipeOp'
-  constructor: (@l, @r) ->
+  constructor: (@lhs, @rhs) ->
 
-  init: (@def = $q.defer()) ->
+  run: (args...) ->
+    super args...
+    rhsDone = @rhs.run @out, @err
+    lhsDone = @lhs.run @rhs.in, @rhs.in
+    @in = @lhs.in
 
-    do @l.init
-    @recv = @l.recv
-    do @r.init @def
+    lhsDone.then rhsDone
 
-    @l.pipe sout: @r.recv, serr: @r.recv
-    @l.done.then => @r.recv.end()
-    @l.done.catch @def.reject
-
-    @done = @def.promise
-
-  pipe: (io) ->
-    @l?.pipe? in: io.in, sout: @r.recv, serr: process.stderr
-    @r?.pipe? sout: io.sout, serr: io.serr
-    
 # File Writeable Node ################################################
 
 class FileNode extends Node
   type: 'FileNode'
   constructor: (@file) ->
   open: ->
-    try @writeable = fs.createWriteStream @file
+    try @in = fs.createWriteStream @file
     catch err then throw err
   remove: ->
     try fs.unlinkSync @file
     catch err
+  close: -> @in?.end?()
 
 
 module.exports = Nodes =
 
   Node: Node
+  NoOp: NoOp
   Cmd: Cmd
   FileNode: FileNode
 
   # Piping
   PipeOp: PipeOp
 
-  # Sequentials
-  Sequential: Sequential
+  # Composition
+  Composition: Composition
   SeqOp: SeqOp
-  ConjunctionOp: ConjunctionOp
+  ConjOp: ConjOp
 
   # Redirects
   Redirect: Redirect

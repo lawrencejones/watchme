@@ -7,62 +7,126 @@ exec = (require 'child_process').exec
 Nodes = require '../src/nodes'
 CmdParser = require '../src/cmd_parser'
 
+# Test cases
+TEST_CMDS =
+  [
+      #####################################################
+    [ 'Cmd'
+      #####################################################
+      
+      cmd: 'echo'
+      exp: bin: 'echo', args: []
+      out: '\n', err: ''
+    ,
+      cmd: 'echo hello world'
+      exp: bin: 'echo', args: ['hello', 'world']
+      out: 'hello world\n', err: ''
+
+    ,
+      cmd: 'touch /tmp/file'
+      exp: bin: 'touch', args: ['/tmp/file']
+      out: '', err: ''
+    ,
+      cmd: '/bin/echo'
+      exp: bin: '/bin/echo', args: []
+      out: '\n', err: ''
+    ]
+      #####################################################
+    [ 'SeqOp'
+      #####################################################
+      
+      cmd: 'echo first; echo second'
+      exp:
+        head: bin: 'echo', args: ['first']
+        tail: bin: 'echo', args: ['second']
+      out: 'first\nsecond\n', err: ''
+    ,
+      cmd: 'echo; echo last'
+      exp:
+        head: bin: 'echo', args: []
+        tail: bin: 'echo', args: ['last']
+      out: '\nlast\n', err: ''
+    ,
+      cmd: ';echo'
+      exp:
+        head: {}
+        tail: bin: 'echo', args: []
+      out: '\n', err: ''
+    ]
+      #####################################################
+    [ 'ConjOp'
+      #####################################################
+      
+      cmd: 'echo this && echo and'
+      exp:
+        head: bin: 'echo', args: ['this']
+        tail: bin: 'echo', args: ['and']
+      out: 'this\nand\n', err: ''
+    ,
+      cmd: 'which /does/not/exist && echo donotprint'
+      exp:
+        head: bin: 'which', args: ['/does/not/exist']
+        tail: bin: 'echo', args: ['donotprint']
+      out: '', err: '', exit: 1
+    ]
+  ]
+
+# Shared test hooks ##################################################
+
+# Store all test files in this folder. Remove on cleanup.
+TMP_DIR = (require './test.tmpdir').init(before, after)
+STDOUT = path.join TMP_DIR, 'stdout.log'
+STDERR = path.join TMP_DIR, 'stderr.log'
+
+
 # Parser Spec ########################################################
 
 describe 'CmdParser', ->
 
-  describe 'should parse', ->
+  TEST_CMDS.map (nodeClass) ->
 
-    parse = (cmd) ->
-      CmdParser.parse cmd, Nodes
+    [node, tests...] = nodeClass
 
-    it 'echo hello', ->
-      echo = parse 'echo hello'
-      echo.type.should.eql 'Cmd'
-      echo.bin.should.eql 'echo'
-      echo.args.should.eql ['hello']
+    describe "#{node} Node", ->
 
-    it '/usr/bin/echo hello', ->
-      echo = parse '/usr/bin/echo hello'
-      echo.type.should.eql 'Cmd'
-      echo.should.containDeep
-        bin: '/usr/bin/echo', args: ['hello']
+      [stdout, stderr] = [null, null]
+      beforeEach ->
+        stdout = fs.createWriteStream STDOUT
+        stderr = fs.createWriteStream STDERR
+        stdout.encoding = stderr.encoding = 'utf8'
 
-    it 'echo hello > file', ->
-      redir = parse 'echo hello > file'
-      redir.type.should.eql 'RedirectOp'
-      redir.src.type.should.eql 'Cmd'
-      redir.src.should.containDeep
-        bin: 'echo', args: ['hello']
+      afterEach (done) ->
+        fs.unlink STDOUT, (err) -> fs.unlink STDERR, (err) -> do done
 
-    it "echo hello | sed 's/hello/world/g'", ->
-      piped = parse "echo hello | sed 's/hello/world/g'"
-      piped.type.should.eql 'PipeOp'
-      piped.l.type.should.eql 'Cmd'
-      piped.l.should.containDeep
-        bin: 'echo', args: ['hello']
-      piped.r.type.should.eql 'Cmd'
-      piped.r.should.containDeep
-        bin: 'sed', args: ["'s/hello/world/g'"]
+      verifyLogs = (eout, eerr) ->
+        fs.readFileSync(STDOUT, 'utf8').should.eql eout
+        fs.readFileSync(STDERR, 'utf8').should.eql eerr
 
-    it 'echo this; echo then that', ->
-      seq = parse 'echo this; echo then that'
-      seq.type.should.eql 'SeqOp'
-      seq.h.type.should.eql 'Cmd'
-      seq.h.should.containDeep
-        bin: 'echo', args: ['this']
-      seq.t.type.should.eql 'Cmd'
-      seq.t.should.containDeep
-        bin: 'echo', args: ['then', 'that']
+      tests.map (test) ->
 
-    it 'echo this && echo and that', ->
-      conj = parse 'echo this && echo and that'
-      conj.type.should.eql 'ConjunctionOp'
-      conj.h.type.should.eql 'Cmd'
-      conj.h.should.containDeep
-        bin: 'echo', args: ['this']
-      conj.t.type.should.eql 'Cmd'
-      conj.t.should.containDeep
-        bin: 'echo', args: ['and', 'that']
+        cmd = null
+        [cmdStr, exp, eout, eerr] = [test.cmd, test.exp, test.out, test.err]
+        exit = test.exit ? 0
+        before -> cmd = CmdParser.parse cmdStr, Nodes
+
+        describe "$ #{cmdStr}".white, ->
+
+          describe 'should', ->
+
+            it 'parse', ->
+              cmd.type.should.eql node
+              cmd.should.eql exp
+
+            it 'execute', (done) ->
+              cmd.run(stdout, stderr).then (code) ->
+                code.should.be.eql exit
+                verifyLogs eout, eerr
+                do done
+              .catch done
+              .done()
+
+
+
+
 
 
