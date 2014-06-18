@@ -44,8 +44,6 @@ try
   if not (cmdStr = options['exec'])?
     throw new Error 'Command (--exec) not supplied'
 
-  if options['clear'] then cmdString = "clear; #{cmdStr}"
-
   cmd = CmdParser.parse cmdStr, Nodes
   running = false
 
@@ -57,6 +55,7 @@ try
     target.subscribe (event) ->
       if not running
         running = true
+        process.stdout.write '\u001B[2J\u001B[0;0f' if options['clear']
         if not options['quiet'] then console.log """
         Triggered by...
           [
