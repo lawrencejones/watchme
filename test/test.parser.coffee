@@ -90,7 +90,7 @@ TEST_CMDS =
       out: 'world\n', err: ''
     ]
 #     #####################################################
-#   [ 'RedirectOp'
+#   [ 'RedirectOp' # TODO
 #     #####################################################
 #
 #     cmd: "echo CONTENT > #{TMP_DIR}/output; cat #{TMP_DIR}/output"
