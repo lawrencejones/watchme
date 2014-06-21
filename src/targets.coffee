@@ -11,14 +11,14 @@ class Target
   # Given a target string, will return either an instanceof
   # Target, which can then be subscribed to for changes.
   # WD is the base from which to resolve targets.
-  @create: (tname, base = process.cwd()) ->
+  @create: (tname, base = process.cwd(), wait) ->
     file = path.join base, tname
     Type = if fs.statSync(file).isDirectory() then Dir else File
-    new Type tname, file, base
+    new Type tname, file, base, wait
 
   # Supplied with a target name and a filepath, will construct
   # a Target instance.
-  constructor: (@tname, @file = @tname, @base = process.cwd()) ->
+  constructor: (@tname, @file = @tname, @base = process.cwd(), @wait = 25) ->
     @waiters = []
     @inProgress = false
     @eventCache = undefined
@@ -52,13 +52,13 @@ class Target
   #   file:   Path to file
   #
   # During the wait, extra file events can be pushed into EVENT.FILES.
-  broadcast: (event, wait = 500) ->
+  broadcast: (event) ->
     event.type = event.type.replace /rename/, 'change'
     run = not @eventCache?
     @eventCache ?= tname: @tname, files: {}
     @eventCache.files[event.tname] ?=
       type: event.type, file: event.file
-    if run then $q.delay(wait).then =>
+    if run then $q.delay(@wait).then =>
       waiter @eventCache for waiter in @waiters
       @eventCache = undefined
 
@@ -126,8 +126,7 @@ class Dir extends Target
           target.subscribe (event) =>
             for own file,change of event.files
               @broadcast\
-              ( tname: @tname, type: change.type, file: change.file
-              , 0 )
+              ( tname: @tname, type: change.type, file: change.file )
 
   # Examines the current folder contents. If any folder watchers
   # are registered which no longer exist, then these are removed

@@ -1,3 +1,11 @@
 #!/usr/bin/env node
 // Start cli modules
-require(require('path').join(__dirname, '..', 'lib', 'watchme'));
+var path = require 'path';
+
+Watchme = require(path.join(__dirname, '..', 'lib', 'watchme'));
+
+if (module.parent) {
+  module.exports = Watchme;
+} else {
+  Watchme.startCli(process.argv.slice(2));
+}
