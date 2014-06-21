@@ -14,7 +14,7 @@ CmdParser = require './cmd_parser'
 Nodes     = require './nodes'
 Target    = (require './targets').Target
 
-class Watchme
+module.exports = class Watchme
 
   # Given a compiled command and a verbose option, will run that command.
   @run: (cmd, verbose) ->
