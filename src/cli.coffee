@@ -17,7 +17,7 @@ defaultOptionDefs = -> [
   ['v', 'version']
   ['d', 'hidden']
   ['q', 'quiet']
-  ['t', 'time', 1500]
+  ['t', 'time', 1250]
   ['i', 'regex', null]
   ['e', 'exec', null]
 ]
@@ -55,6 +55,15 @@ class ArgParser
         opt
     @parsers
 
+  # Constructs default options from an array of option definitions.
+  makeDefaults: (defs = do defaultOptionDefs) ->
+    options = {}
+    defs.map (def) ->
+      [short, long, hasDefault] = def
+      options[long] = hasDefault || false
+    options
+
+
   # Verifies that a file exists using the supplied wd and resolving all
   # ., .. and ~'s.
   fileExists: (file, wd = process.cwd()) ->
@@ -67,8 +76,8 @@ class ArgParser
   #
   # Will return an object containing all options and unmatched
   # args.
-  parse: (args, verify = @fileExists, options = {}, i = 0) ->
-    [targets, options] = [[],{}]
+  parse: (args, verify = @fileExists, options = do @makeDefaults, i = 0) ->
+    targets = []
     while i < args.length
       opt = @parsers[args[i]]? args, i
       if !opt then targets.push args[i]

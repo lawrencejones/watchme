@@ -17,30 +17,33 @@ Target    = (require './targets').Target
 module.exports = class Watchme
 
   # Given a compiled command and a verbose option, will run that command.
-  @run: (cmd, verbose) ->
-    process.stdout.write '\u001B[2J\u001B[0;0f' if verbose
-    if verbose then console.log """
+  @run: (cmd, event, options) ->
+    do console.log
+    process.stdout.write '\u001B[2J\u001B[0;0f' if options['clear']
+    console.log """
     Triggered by...
       [
     #{('    '+e.type+'\t'+e.file for own _,e of event.files).join '\n'}
-      ]"""
+      ]""" if event? and not options['quiet']
+    do console.log
     cmd.run().then (code) ->
-      console.log "Exited with code [#{code}]" if verbose
+      console.log "\nExited with code [#{code}]" if not options['quiet']
 
-  # Given a command in string form, with watch targets and a verbose flag,
+
+  # Given a command in string form, with watch targets and an options config
   # will schedule that command to run on changes to targets.
-  @watchTargetAndRun: (cmdStr, args, verbose) ->
+  @watchTargetAndRun: (cmdStr, args, options) ->
     cmd = CmdParser.parse cmdStr, Nodes
     running = false
-    targets = args.map (arg) -> Target.create arg
-    for target in targets
+    targets = args.map (arg) -> Target.create arg, undefined, options['time']
+    for target,i in targets
       target.watch()
-      console.log "Watching #{arg}" if verbose
+      console.log "Watching #{args[i]}" if not options['quiet']
       target.subscribe (event) ->
         return if running
         running = true
-        Watchme.run cmd, verbose
-        .finally -> running = false
+        Watchme.run cmd, event, options
+        .then -> running = false
     return unwatch = ->
       for target in targets
         target.unwatch()
@@ -75,7 +78,7 @@ module.exports = class Watchme
         throw new Error 'Command (--exec) not supplied'
 
       # Start watcher
-      Watchme.watchTargetAndRun cmdStr, process.argv[2..], not options['quiet']
+      Watchme.watchTargetAndRun cmdStr, targets, options
 
     catch err
 
@@ -87,4 +90,5 @@ module.exports = class Watchme
       throw err
 
 
-     
+if not module.parent
+  Watchme.startCli process.argv[2..]
