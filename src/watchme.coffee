@@ -43,7 +43,7 @@ module.exports = class Watchme
         return if running
         running = true
         Watchme.run cmd, event, options
-        .then -> running = false
+        .finally -> running = false
     return unwatch = ->
       for target in targets
         target.unwatch()
